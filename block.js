@@ -1,32 +1,39 @@
 const SHA256 = require('crypto-js/sha256');
 
 class Block{
-  constructor(index, data, previousHash = ''){
+  constructor(index, data, previousHash = '000', hash=undefined){
     this.index = index;
     this.timestamp = new Date().toUTCString();
     this.data = data;
-    this.previousHash = previousHash
-    this.hash = this.calculateHash();
+    this.previousHash = previousHash;
+    if (hash){
+      this.hash = hash
+    }else{
+      this.hash = this.calculateHash();
+    }
+
+    this.nonce = 0;
   }
 
   calculateHash(){
-    return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data)).toString();
+    return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
   }
 
   mineBlock(difficulty){
-    while(this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')){
+    while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')){
       this.hash = this.calculateHash();
-
+      this.nonce ++;
     }
 
-    console.log("block mined" + this.hash)
+    return "block mined " + this.hash
   }
 }
 
 
 class Blockchain{
-  constructor(){
+  constructor(difficulty){
     this.chain = [this.createGenesis()];
+    this.difficulty = difficulty;
   }
 
   createGenesis(){
@@ -39,8 +46,10 @@ class Blockchain{
 
   addBlock(newBlock){
     newBlock.previousHash = this.getLatestBlock().hash;
-    newBlock.hash = newBlock.calculateHash();
+    const res = newBlock.mineBlock(this.difficulty);
     this.chain.push(newBlock);
+
+    return res
   }
 
   isValidChain(){
@@ -48,12 +57,14 @@ class Blockchain{
       const currentBlock = this.chain[i];
       const previouBlock = this.chain[i - 1];
 
+      console.log(currentBlock.hash, "tei")
+      console.log(currentBlock.calculateHash(), "tal")
       if(currentBlock.hash !== currentBlock.calculateHash()){
         return false;
       }
 
-      console.log(previouBlock, "tei")
       if(currentBlock.previousHash !== previouBlock.hash){
+
         return false;
       }
 
@@ -62,9 +73,14 @@ class Blockchain{
   }
 }
 
-let OuiCoin = new Blockchain;
-OuiCoin.addBlock(new Block(1, {amount: 2}));
-OuiCoin.addBlock(new Block(2, {amount: 4}));
+class Transaction{
+  constructor(from, to, amount){
+    this.from = from;
+    this.to = to;
+    this.amount = amount;
+  }
+  
+}
 
-
-console.log(OuiCoin.isValidChain())
+module.exports.Blockchain = Blockchain
+module.exports.Block = Block

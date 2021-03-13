@@ -4,6 +4,10 @@ const fetch = require("node-fetch");
 
 const SHA256 = require('crypto-js/sha256')
 
+const { Blockchain, Block } = require('./block.js'); 
+
+let OuiCoin = new Blockchain(3);
+
 var sqlite3 = require('sqlite3').verbose();
 let db = new sqlite3.Database('dblite', (err) => {
   if (err) {
@@ -22,53 +26,39 @@ client.on('message', msg => {
     if (msg.author.id != client.user.id) {
     }
 
-    if (msg.content.startsWith('save')){
-      const message = msg.content.split(' ')
-      const link = message[1]
-      const title = message[2]
-      console.log(link, title)
+    if (msg.content.startsWith('$mine')){
+      msg.channel.send("Mining Block...");
+      const res = OuiCoin.addBlock(new Block(1, {amount: 2}));
+      msg.channel.send(res);
+    }
+
+    if (msg.content.startsWith('$chain')){
+      var arr = ''
+      var cut = OuiCoin.chain.length
+      if (cut > 5){
+        arr = OuiCoin.chain.slice(Math.max(OuiCoin.chain.length - 5, 1));
+      }else{
+        arr = OuiCoin.chain;
+      }
       const embed = new Discord.MessageEmbed()
+      arr.forEach(function(objeto, i) {
+          const obj = objeto;
+
+          embed.addFields(
+            {name: 'prevHash: ', value: obj.previousHash, inline: true},
+
+            {name: 'hash: ', value: obj.hash, inline: true},
+
+            {name: '...', value: '...', inline: false},
+          )
+
+      })
+
       msg.channel.send(embed);
     }
 
-    if (msg.content.startsWith('ver p')){
-      get_from_db(msg)
-    }
 
-    if (msg.content.startsWith('add p')){
-      db.run(`INSERT INTO playlists (playlist) VALUES ('${playlist}') `, (err) => {
-                    if (err) {
-                      return console.error(err.message);
-                    }
-      })
-    }
-
-    if (msg.content.startsWith('create')){
-      const play_name = msg.content.split(' ')
-      const playlist = play_name[1]
-      console.log(db)
-      db.run(`
-      CREATE TABLE IF NOT EXISTS playlists (
-        playlist text NOT NULL
-      );`, (err) => {
-                    if (err) {
-                      return console.error(err.message);
-                    }
-      })
-
-      db.run(`INSERT INTO playlists (playlist) VALUES ('${playlist}') `, (err) => {
-                    if (err) {
-                      return console.error(err.message);
-                    }
-      })
-      msg.channel.send(`PLAYLIST ${playlist} CREATED`)
-    }
 });
-
-async function get_from_db(msg){
-    const res = await db.get(`SELECT * from playlists;`);
-    console.log(res)
-}
 
 client.login(process.env.DISCORD_BOT_SECRET);
 
