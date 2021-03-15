@@ -2,10 +2,13 @@ const SHA256 = require('crypto-js/sha256');
 const { randomizeInteger } = require('./random.js')
 
 const EC = require('elliptic').ec;
+const fs = require('fs') 
 
 class Block{
-  constructor(transactions, previousHash = '000', hash=undefined){
-    this.timestamp = new Date().toUTCString();
+  constructor(timestamp, transactions, previousHash = '000', hash=undefined){
+    // this.timestamp = new Date().toUTCString();
+    this.timestamp = timestamp;
+    
     this.transactions = transactions;
     this.previousHash = previousHash;
     if (hash){
@@ -23,10 +26,13 @@ class Block{
 
   mineBlock(difficulty){
     while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')){
-      this.hash = this.calculateHash();
       this.nonce ++;
-    }
+      this.hash = this.calculateHash();
 
+      if (this.nonce > 10000){
+        return "Could not process hash! Try to mine on your machine!"
+      }
+    }
     return "block mined " + this.hash
   }
 

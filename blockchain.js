@@ -9,56 +9,52 @@ class Blockchain{
     this.chain = [this.createGenesis()];
     this.difficulty = difficulty;
     this.pendingTransactions = [];
-    this.miningReward = randomizeInteger(20,100);
   }
 
   createGenesis(){
-    return new Block(0, "0")
+    return new Block(new Date().toUTCString() , 0, "0")
   }
 
   getLatestBlock(){
     return this.chain[this.chain.length - 1]
   }
 
-  // addBlock(newBlock){
-  //   newBlock.previousHash = this.getLatestBlock().hash;
-  //   const res = newBlock.mineBlock(this.difficulty);
-  //   this.chain.push(newBlock);
-  //   return res
-  // }
-
-
   miningPendingTransaction(miningRewardAddress){
-    let block = new Block(this.pendingTransactions, this.getLatestBlock().hash);
-    block.mineBlock(this.difficulty, this.ge);
-    console.log('Block mined!')
+    let block = new Block(new Date().toUTCString() ,this.pendingTransactions, this.getLatestBlock().hash);
+    const res = block.mineBlock(this.difficulty);
 
-    this.chain.push(block);
+    if (res.startsWith('C')){
+      return res
+    }else{
+      this.chain.push(block);
+      
+      this.pendingTransactions = [
+        new Transaction(null, miningRewardAddress, randomizeInteger(20,100))
+      ]
 
-    this.pendingTransactions = [
-      new Transaction(null, miningRewardAddress, this.miningReward)
-    ]
+      return res + " With value: " + randomizeInteger(20,100) + " OuiCoins";
+    }
   }
 
   addTransaction(transaction){
     if (!transaction.from || !transaction.to) {
-      console.log('Transaction must include from and to address');
+      return 'Transaction must include from and to address';
     }
 
     if (!transaction.isValid()) {
-      console.log('Cannot add invalid transaction to chain');
+      return 'Cannot add invalid transaction to chain';
     }
     
     if (transaction.amount <= 0) {
-      console.log('Transaction amount should be higher than 0');
+      return 'Transaction amount should be higher than 0';
     }
     
     if (this.getBalanceOfAddress(transaction.from) < transaction.amount) {
-      console.log('Not enough balance');
+      return 'Not enough balance';
     }
 
     this.pendingTransactions.push(transaction);
-    console.log('transaction added: %s', transaction);
+      return 'Transaction added: ' + transaction.signature;
   }
 
   getBalanceOfAddress(address){
@@ -95,7 +91,6 @@ class Blockchain{
 
       if (currentBlock.hash !== currentBlock.calculateHash()) {
 
-        console.log("TEII", currentBlock.calculateHash(), currentBlock.hash)
         return false;
       }
     }
